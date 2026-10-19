@@ -38,14 +38,22 @@ ENV UV_PYTHON_INSTALL_DIR=/opt/python \
     UV_PYTHON_BIN_DIR=/usr/local/bin \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/usr/local/bin \
-    UV_LINK_MODE=copy
+    UV_LINK_MODE=copy \
+    PIP_ROOT_USER_ACTION=ignore
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
-RUN uv python install 3.12 3.13 --default --preview-features python-install-default \
+RUN uv python install 3.12 \
+  && uv python install 3.13 --default --preview-features python-install-default \
+  # uv marks its Pythons "externally managed", so pip refuses to install into them. A sandbox is
+  # where `pip install` is the point: the marker goes, and both behave like a container's Python.
+  && find /opt/python -name EXTERNALLY-MANAGED -delete \
   && python -m ensurepip --upgrade \
   && python -m pip install --no-cache-dir --upgrade pip \
-  && ln -s "$(python -c 'import sys, os; print(os.path.join(os.path.dirname(sys.executable), "pip"))')" /usr/local/bin/pip \
-  && ln -s /usr/local/bin/pip /usr/local/bin/pip3 \
-  && uv tool install poetry
+  && printf '#!/bin/sh\nexec python -m pip "$@"\n' > /usr/local/bin/pip \
+  && chmod +x /usr/local/bin/pip && ln -s /usr/local/bin/pip /usr/local/bin/pip3 \
+  && uv tool install poetry \
+  # Scripts `pip install` adds (black, ruff, a CLI) land in the interpreter's own bin: on the path.
+  && ln -s "$(dirname "$(dirname "$(readlink -f /usr/local/bin/python)")")" /opt/python/default
+ENV PATH="${PATH}:/opt/python/default/bin"
 
 # Node.js 24 (the current LTS line, its latest release), npm, pnpm, yarn and bun.
 RUN NODE_VERSION="$(curl -fsSL https://nodejs.org/dist/index.json | jq -r '[.[] | select(.version | startswith("v24."))][0].version')" \

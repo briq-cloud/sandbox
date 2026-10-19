@@ -4,10 +4,10 @@
 # is left out, so one script describes every tag.
 set -u
 
-ver() { "$@" 2>/dev/null | head -n 1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -n 1; }
+ver() { "$@" 2>&1 | head -n 1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -n 1; }
 has() { command -v "$1" > /dev/null 2>&1; }
 row() { printf '| %s | %s | %s |\n' "$1" "$2" "$3"; }
-tool() { has "$1" && row "\`$1\`" "$(ver "$@")" "$3"; }
+tool() { has "$1" && row "\`$1\`" "$(ver "$1" "$2")" "$3"; }
 
 . /etc/os-release
 echo "# What is in the sandbox"
@@ -59,7 +59,7 @@ tool vim --version "Editor"
 tool nano --version "Editor"
 tool tar --version "Archives (\`zip\`, \`unzip\`, \`xz\`, \`bzip2\` too)"
 tool patch --version "Apply diffs (\`diff\` too)"
-tool nc -h "TCP checks (netcat); \`dig\`, \`ss\`, \`lsof\` too"
+has nc && row "\`nc\`" "" "TCP checks (netcat); \`dig\`, \`ss\`, \`lsof\` too"
 tool pandoc --version "Document conversion"
 tool pdftotext -v "PDF text and pages (poppler)"
 tool qpdf --version "PDF structure"

@@ -18,11 +18,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m pip install --no-cache-dir \
     numpy pandas matplotlib openpyxl python-docx python-pptx pypdf requests
 
-# Playwright for Node.js and Python, at one version, with the Chromium that version expects.
-# Both find it through PLAYWRIGHT_BROWSERS_PATH, so no `playwright install` is needed.
+# Playwright for Python and Node.js on the same minor (their patch numbers differ; the browser
+# build is per minor), with the Chromium they expect. Both find it through
+# PLAYWRIGHT_BROWSERS_PATH, so no `playwright install` is needed.
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
-RUN npm install -g --no-fund --no-audit playwright \
-  && python -m pip install --no-cache-dir "playwright==$(npm view playwright version)" \
+RUN python -m pip install --no-cache-dir playwright \
+  && PW="$(python -c 'import importlib.metadata as m; print(".".join(m.version("playwright").split(".")[:2]))')" \
+  && npm install -g --no-fund --no-audit "playwright@${PW}" \
   && playwright install --with-deps chromium \
+  && python -m playwright install chromium \
   && npm cache clean --force \
   && rm -rf /var/lib/apt/lists/*
