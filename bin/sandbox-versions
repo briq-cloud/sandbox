@@ -1,0 +1,75 @@
+#!/bin/sh
+# What this sandbox has, as Markdown. The build writes REFERENCE.md from it; an agent can run it
+# inside a briq to see the same. A tool that is not installed (the default image has no pandoc)
+# is left out, so one script describes every tag.
+set -u
+
+ver() { "$@" 2>/dev/null | head -n 1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -n 1; }
+has() { command -v "$1" > /dev/null 2>&1; }
+row() { printf '| %s | %s | %s |\n' "$1" "$2" "$3"; }
+tool() { has "$1" && row "\`$1\`" "$(ver "$@")" "$3"; }
+
+. /etc/os-release
+echo "# What is in the sandbox"
+echo
+echo "\`$(uname -m)\`, ${PRETTY_NAME}, built $(date -u +%Y-%m-%d). Printed by \`sandbox-versions\` inside the image."
+echo
+echo "## Languages"
+echo
+echo "| Language | Version | Package managers |"
+echo "| --- | --- | --- |"
+row Python "$(ver python --version) (\`python\`, \`python3\`), $(ver python3.12 --version) (\`python3.12\`)" \
+  "pip $(ver pip --version), uv $(ver uv --version), poetry $(ver poetry --version)"
+row Node.js "$(ver node --version)" \
+  "npm $(ver npm --version), pnpm $(ver pnpm --version), yarn $(ver yarn --version), bun $(ver bun --version)"
+row "C/C++" "gcc $(ver gcc -dumpfullversion)" \
+  "make $(ver make --version), cmake $(ver cmake --version), ninja $(ver ninja --version), pkg-config $(ver pkg-config --version)"
+echo
+if python -c 'import pandas' 2>/dev/null; then
+  echo "Python libraries for \`python\`: $(python -c '
+import importlib.metadata as m
+names = ["numpy", "pandas", "matplotlib", "openpyxl", "python-docx", "python-pptx", "pypdf", "requests", "playwright"]
+print(", ".join(f"{n} {m.version(n)}" for n in names))')"
+  echo
+fi
+echo "## Database clients"
+echo
+echo "The servers run as briqs next to the sandbox (the \`postgres\` and \`redis\` recipes); these are the clients."
+echo
+echo "| Client | Version | For |"
+echo "| --- | --- | --- |"
+tool psql --version "PostgreSQL (\`pg_dump\`, \`pg_restore\` too)"
+tool redis-cli --version "Redis"
+tool sqlite3 --version "SQLite, a file"
+echo
+echo "## Tools"
+echo
+echo "| Tool | Version | What for |"
+echo "| --- | --- | --- |"
+tool git --version "Version control (\`git-lfs\` too)"
+tool curl --version "HTTP"
+tool wget --version "HTTP"
+tool ssh -V "SSH client"
+tool jq --version "JSON"
+tool yq --version "YAML"
+tool rg --version "Search in files (ripgrep)"
+tool fd --version "Find files"
+tool tmux -V "Terminal multiplexer"
+tool vim --version "Editor"
+tool nano --version "Editor"
+tool tar --version "Archives (\`zip\`, \`unzip\`, \`xz\`, \`bzip2\` too)"
+tool patch --version "Apply diffs (\`diff\` too)"
+tool nc -h "TCP checks (netcat); \`dig\`, \`ss\`, \`lsof\` too"
+tool pandoc --version "Document conversion"
+tool pdftotext -v "PDF text and pages (poppler)"
+tool qpdf --version "PDF structure"
+tool ffmpeg -version "Audio and video"
+tool convert --version "Images (ImageMagick)"
+tool tesseract --version "OCR, English"
+tool dot -V "Graphs (Graphviz)"
+if has playwright; then
+  echo
+  echo "## Browser"
+  echo
+  echo "Playwright $(ver playwright --version) for Node.js (\`playwright\`, global) and Python (\`python -m playwright\`), with Chromium at \`${PLAYWRIGHT_BROWSERS_PATH:-/opt/pw-browsers}\` (\`PLAYWRIGHT_BROWSERS_PATH\` is set). Firefox and WebKit are not installed."
+fi

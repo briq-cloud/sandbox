@@ -1,0 +1,28 @@
+# The briq sandbox, `full`: everything in the default image, plus document and media tools, the
+# Python data libraries, and Playwright with a Chromium of its own. A few gigabytes instead of
+# under one; pick it with `image: "ghcr.io/briq-cloud/sandbox:full"` when the task needs it.
+ARG BASE=ghcr.io/briq-cloud/sandbox:latest
+FROM ${BASE}
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Documents, images, audio and video, OCR, graphs.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pandoc poppler-utils qpdf \
+    ffmpeg imagemagick \
+    tesseract-ocr tesseract-ocr-eng \
+    graphviz \
+  && rm -rf /var/lib/apt/lists/*
+
+# The Python data and document libraries, for `python` (3.13).
+RUN python -m pip install --no-cache-dir \
+    numpy pandas matplotlib openpyxl python-docx python-pptx pypdf requests
+
+# Playwright for Node.js and Python, at one version, with the Chromium that version expects.
+# Both find it through PLAYWRIGHT_BROWSERS_PATH, so no `playwright install` is needed.
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
+RUN npm install -g --no-fund --no-audit playwright \
+  && python -m pip install --no-cache-dir "playwright==$(npm view playwright version)" \
+  && playwright install --with-deps chromium \
+  && npm cache clean --force \
+  && rm -rf /var/lib/apt/lists/*
