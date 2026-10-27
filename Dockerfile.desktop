@@ -25,6 +25,7 @@ RUN V="${NOVNC_VERSION:-$(curl -fsSL https://api.github.com/repos/novnc/noVNC/re
   && mkdir -p /opt/novnc \
   && curl -fsSL "https://github.com/novnc/noVNC/archive/refs/tags/${V}.tar.gz" | tar -xz --strip-components=1 -C /opt/novnc \
   && ln -s vnc.html /opt/novnc/index.html \
+  && printf '{"autoconnect": true, "reconnect": true, "resize": "scale", "view_only": true}\n' > /opt/novnc/defaults.json \
   && python -m pip install --no-cache-dir websockify
 
 # Playwright MCP, attached to the desktop's Chromium over the DevTools protocol.
