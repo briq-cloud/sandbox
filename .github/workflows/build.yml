@@ -1,14 +1,16 @@
-# Builds the sandbox images, pushes them to ghcr.io/briq-cloud/sandbox and writes REFERENCE.md and
-# REFERENCE-full.md from what each image has. Every Monday, on every push to main, and by hand.
+# Builds the sandbox images, pushes them to ghcr.io/briq-cloud/sandbox and writes REFERENCE.md,
+# REFERENCE-full.md and REFERENCE-desktop.md from what each image has. Every Monday, on every push
+# to main, and by hand.
 #
-# Tags: `latest` and `<date>` for the default image, `full` and `full-<date>` for the full one. A
-# date tag never moves; `latest` and `full` follow the newest build.
+# Tags: `latest` and `<date>` for the default image, `full` and `full-<date>` for the full one,
+# `desktop` and `desktop-<date>` for the desktop. A date tag never moves; the others follow the
+# newest build.
 name: build
 
 on:
   push:
     branches: [main]
-    paths-ignore: ['REFERENCE.md', 'REFERENCE-full.md']
+    paths-ignore: ['REFERENCE.md', 'REFERENCE-full.md', 'REFERENCE-desktop.md']
   schedule:
     - cron: '0 5 * * 1'
   workflow_dispatch:
@@ -70,26 +72,43 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Build and push the desktop image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.desktop
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          build-args: BASE=${{ env.IMAGE }}:full-${{ steps.date.outputs.tag }}
+          tags: |
+            ${{ env.IMAGE }}:desktop
+            ${{ env.IMAGE }}:desktop-${{ steps.date.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       - name: Write the reference from the images
         run: |
           set -eu
           size() { docker manifest inspect "$1" | jq '[.layers[].size] | add / 1048576 | round'; }
-          for t in "${{ steps.date.outputs.tag }}" "full-${{ steps.date.outputs.tag }}"; do
-            case "$t" in full-*) out=REFERENCE-full.md ;; *) out=REFERENCE.md ;; esac
+          for t in "${{ steps.date.outputs.tag }}" "full-${{ steps.date.outputs.tag }}" "desktop-${{ steps.date.outputs.tag }}"; do
+            case "$t" in
+              full-*) out=REFERENCE-full.md file=Dockerfile.full ;;
+              desktop-*) out=REFERENCE-desktop.md file=Dockerfile.desktop ;;
+              *) out=REFERENCE.md file=Dockerfile ;;
+            esac
             docker run --rm "$IMAGE:$t" sandbox-versions > "$out"
             printf '\n## Image\n\n`%s:%s`, %s MB compressed. The Dockerfile: [%s](%s).\n' \
-              "$IMAGE" "$t" "$(size "$IMAGE:$t")" \
-              "$( [ "$out" = REFERENCE.md ] && echo Dockerfile || echo Dockerfile.full )" \
-              "$( [ "$out" = REFERENCE.md ] && echo Dockerfile || echo Dockerfile.full )" >> "$out"
+              "$IMAGE" "$t" "$(size "$IMAGE:$t")" "$file" "$file" >> "$out"
           done
-          cat REFERENCE.md REFERENCE-full.md >> "$GITHUB_STEP_SUMMARY"
+          cat REFERENCE.md REFERENCE-full.md REFERENCE-desktop.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Commit the reference
         run: |
           set -eu
           git config user.name 'briq build'
           git config user.email 'hello@briq.cloud'
-          git add REFERENCE.md REFERENCE-full.md
+          git add REFERENCE.md REFERENCE-full.md REFERENCE-desktop.md
           git diff --cached --quiet && exit 0
           git commit -m "Reference: ${{ steps.date.outputs.tag }}"
           git push
