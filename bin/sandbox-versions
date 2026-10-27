@@ -73,3 +73,12 @@ if has playwright; then
   echo
   echo "Playwright $(ver playwright --version) for Node.js (\`playwright\`, global) and Python (\`python -m playwright\`), with Chromium at \`${PLAYWRIGHT_BROWSERS_PATH:-/opt/pw-browsers}\` (\`PLAYWRIGHT_BROWSERS_PATH\` is set). Firefox and WebKit are not installed."
 fi
+if [ -x /usr/local/bin/desktop-start ]; then
+  pkg() { dpkg-query -W -f='${Version}' "$1" 2> /dev/null | grep -oE '^[0-9:]*[0-9]+\.[0-9]+(\.[0-9]+)?' | sed 's/^[0-9]*://'; }
+  size="${DESKTOP_SIZE:-1280x800}"
+  novnc="$(grep -oE '"version": *"[0-9.]+' /opt/novnc/package.json | grep -oE '[0-9.]+$')"
+  echo
+  echo "## Desktop"
+  echo
+  echo "A screen of ${size} (Xvfb $(pkg xvfb)), Openbox $(pkg openbox), and Chromium on it as the \`desktop\` user, its profile on the volume. The view: x11vnc $(pkg x11vnc) and noVNC ${novnc}, on \`\$PORT\`. For agents: Playwright MCP $(ver playwright-mcp --version) on that Chromium, and the desktop's MCP server (screenshot, zoom, click, type, key, scroll, drag) on port 8931, both behind \`DESKTOP_TOKEN\`. Input through xdotool $(pkg xdotool)."
+fi

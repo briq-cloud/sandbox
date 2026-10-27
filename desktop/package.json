@@ -1,0 +1,10 @@
+{
+  "name": "briq-desktop-mcp",
+  "private": true,
+  "type": "module",
+  "description": "The desktop's MCP server: the screen through xdotool, and Playwright MCP behind the same token.",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "4.6.7"
+  }
+}

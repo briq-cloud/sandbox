@@ -1,0 +1,42 @@
+# The briq sandbox, `desktop`: everything in `full`, plus a screen. A virtual display (Xvfb, 1280x800
+# by default) with a window manager (Openbox) and Chromium on it, a view of the screen in a browser
+# (x11vnc and noVNC) to watch and take over, and two ways for an agent to drive it, both MCP:
+# Playwright MCP on that Chromium (the page, by its accessibility tree) and the desktop's own server
+# (the whole screen in pixels: screenshot, click, type, as the model vendors' computer-use tools
+# expect). `desktop-start` runs it all; the briq `desktop` recipe starts it with a token.
+ARG BASE=ghcr.io/briq-cloud/sandbox:full
+FROM ${BASE}
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG NOVNC_VERSION=
+ARG PLAYWRIGHT_MCP_VERSION=
+
+# The screen, the window manager, the view, the input, and fonts for the pages people read.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    xvfb x11-utils openbox x11vnc xdotool \
+    fonts-noto-core fonts-noto-cjk fonts-noto-color-emoji \
+  && rm -rf /var/lib/apt/lists/*
+
+# The browser's own user: Chromium keeps its sandbox, which it cannot as root.
+RUN useradd --create-home --shell /bin/bash desktop
+
+# noVNC (the view, in the browser) from its release, served by websockify.
+RUN V="${NOVNC_VERSION:-$(curl -fsSL https://api.github.com/repos/novnc/noVNC/releases/latest | jq -r .tag_name)}" \
+  && mkdir -p /opt/novnc \
+  && curl -fsSL "https://github.com/novnc/noVNC/archive/refs/tags/${V}.tar.gz" | tar -xz --strip-components=1 -C /opt/novnc \
+  && ln -s vnc.html /opt/novnc/index.html \
+  && python -m pip install --no-cache-dir websockify
+
+# Playwright MCP, attached to the desktop's Chromium over the DevTools protocol.
+RUN npm install -g --no-fund --no-audit "@playwright/mcp@${PLAYWRIGHT_MCP_VERSION:-latest}" \
+  && npm cache clean --force
+
+# The desktop's MCP server (desktop/) and its start script.
+COPY desktop/ /opt/desktop-mcp/
+RUN cd /opt/desktop-mcp && npm install --omit=dev --no-fund --no-audit && npm cache clean --force
+COPY bin/desktop-start bin/sandbox-versions /usr/local/bin/
+RUN chmod +x /usr/local/bin/desktop-start /usr/local/bin/sandbox-versions && sandbox-versions > /dev/null
+
+ENV DESKTOP_SIZE=1280x800
+EXPOSE 8080 8931
+CMD ["desktop-start"]

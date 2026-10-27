@@ -1,0 +1,42 @@
+#!/bin/sh
+# Starts the desktop: a screen (Xvfb), a window manager (Openbox), Chromium on it with its profile
+# on the volume, a view of the screen in a browser (x11vnc, then noVNC on $PORT), Playwright MCP on
+# that Chromium, and the desktop's MCP server. Each runs in a loop: one that exits is started again.
+#
+# DESKTOP_SIZE (1280x800), DESKTOP_PROFILE (/work/.desktop/profile), PORT (8080, the view),
+# DESKTOP_MCP_PORT (8931), DESKTOP_TOKEN (the MCP server's bearer; required).
+set -eu
+export DISPLAY=:1
+SIZE="${DESKTOP_SIZE:-1280x800}"
+PROFILE="${DESKTOP_PROFILE:-/work/.desktop/profile}"
+VIEW="${PORT:-8080}"
+mkdir -p "$PROFILE" /work/.desktop/output
+# A crash leaves a lock that makes the next Chromium refuse the profile.
+rm -f "$PROFILE/SingletonLock" "$PROFILE/SingletonSocket" "$PROFILE/SingletonCookie"
+
+again() { (while true; do "$@" || true; sleep 1; done) & }
+
+# Local connections only (no TCP); -ac lets the browser's own user draw on it.
+again Xvfb :1 -screen 0 "${SIZE}x24" -nolisten tcp -ac -dpi 96
+for _ in $(seq 1 50); do xdpyinfo > /dev/null 2>&1 && break; sleep 0.1; done
+again openbox
+CHROME="$(find /opt/pw-browsers -path '*chrome-linux*/chrome' -type f | head -n 1)"
+W="${SIZE%x*}" H="${SIZE#*x}"
+# Chromium runs as its own user, with its sandbox on: it opens pages nobody vetted. The DevTools
+# port listens on localhost only: Playwright MCP and code in this briq reach it.
+# Its sandbox needs user namespaces: a microVM has them, a container under Docker's default seccomp
+# profile does not, and there Chromium runs without it.
+chown -R desktop:desktop /work/.desktop
+SANDBOX=""
+runuser -u desktop -- unshare --user --map-root-user true 2> /dev/null || SANDBOX="--no-sandbox"
+again runuser -u desktop -- env HOME=/home/desktop "$CHROME" --user-data-dir="$PROFILE" \
+  --remote-debugging-port=9222 --test-type $SANDBOX \
+  --no-first-run --no-default-browser-check --password-store=basic --disable-dev-shm-usage \
+  --window-position=0,0 --window-size="$W,$H" --start-maximized about:blank
+# The view: x11vnc on localhost, noVNC serving it over a WebSocket on $PORT.
+again x11vnc -display :1 -localhost -rfbport 5900 -shared -forever -nopw -quiet -noxdamage
+again websockify --web /opt/novnc "$VIEW" localhost:5900
+for _ in $(seq 1 100); do curl -fs http://127.0.0.1:9222/json/version > /dev/null 2>&1 && break; sleep 0.2; done
+again playwright-mcp --cdp-endpoint http://127.0.0.1:9222 --host 127.0.0.1 --port 8932 \
+  --caps vision --output-dir /work/.desktop/output
+exec node /opt/desktop-mcp/server.mjs
