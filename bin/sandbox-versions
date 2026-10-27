@@ -67,6 +67,23 @@ tool ffmpeg -version "Audio and video"
 tool convert --version "Images (ImageMagick)"
 tool tesseract --version "OCR, English"
 tool dot -V "Graphs (Graphviz)"
+if has claude; then
+  echo
+  echo "## Agent CLIs"
+  echo
+  echo "The vendors' own binaries, unmodified, with their self-update off: a newer version comes with the next build. Each one is signed in with the person's own account; where it keeps the sign-in is set by its variable."
+  echo
+  echo "| CLI | Version | Sign-in kept under |"
+  echo "| --- | --- | --- |"
+  row "Claude Code (\`claude\`)" "$(ver claude --version)" "\`CLAUDE_CONFIG_DIR\`"
+  row "Codex (\`codex\`)" "$(ver sh -c 'codex --version 2>/dev/null')" "\`CODEX_HOME\`"
+  row "Copilot CLI (\`copilot\`)" "$(ver copilot --version)" "\`COPILOT_HOME\`"
+  row "Cursor (\`agent\`)" "$(cat /opt/cursor-agent/VERSION)" "\`XDG_CONFIG_HOME\`/cursor"
+  row "Grok Build (\`grok\`)" "$(ver grok --version)" "\`GROK_HOME\`"
+  row "Mistral Vibe (\`vibe\`)" "$(ver vibe --version)" "\`VIBE_HOME\`"
+  echo
+  echo "The terminal page: \`ttyd\` $(ver ttyd --version)."
+fi
 if has playwright; then
   echo
   echo "## Browser"

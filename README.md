@@ -21,9 +21,11 @@ a sandbox, `sandbox-versions` prints the same.
 | --- | --- | --- |
 | `latest`, `<date>` | The default: languages, tools, database clients ([Dockerfile](Dockerfile)) | under a gigabyte |
 | `full`, `full-<date>` | The default plus pandoc, poppler, qpdf, ffmpeg, ImageMagick, tesseract, Graphviz, the Python data libraries (NumPy, pandas, Matplotlib, openpyxl, python-docx, python-pptx, pypdf) and Playwright with Chromium ([Dockerfile.full](Dockerfile.full), [REFERENCE-full.md](REFERENCE-full.md)) | a few gigabytes |
+| `agent-home`, `agent-home-<date>` | The default plus the vendors' agent CLIs (Claude Code, Codex, Copilot CLI, Cursor's `agent`, Grok Build, Mistral Vibe), unmodified and with their self-update off, and `ttyd` for a terminal page ([Dockerfile.agent-home](Dockerfile.agent-home), [REFERENCE-agent-home.md](REFERENCE-agent-home.md)). What the [agent-home](https://briq.cloud/cookbook/agent-home) recipe runs | about 1.3 GB |
 
 The images are built every Monday and on every change here, for `linux/amd64`. A build takes the
-latest patch of each line (Ubuntu 24.04, Python 3.13, Node 24). `latest` and `full` follow the
+latest patch of each line (Ubuntu 24.04, Python 3.13, Node 24), and each agent CLI's current stable
+release. `latest` and `full` follow the
 newest build; a date tag (`2026-10-19`, `full-2026-10-19`) never moves. On briq, the recipe runs
 `latest`; pass `image` for another tag:
 
@@ -42,6 +44,7 @@ docker run --rm -it ghcr.io/briq-cloud/sandbox:latest bash
 ```bash
 docker build -t sandbox .
 docker build -t sandbox:full --build-arg BASE=sandbox -f Dockerfile.full .
+docker build -t sandbox:agent-home --build-arg BASE=sandbox -f Dockerfile.agent-home .
 docker run --rm sandbox sandbox-versions
 ```
 

@@ -1,14 +1,15 @@
 # Builds the sandbox images, pushes them to ghcr.io/briq-cloud/sandbox and writes REFERENCE.md and
 # REFERENCE-full.md from what each image has. Every Monday, on every push to main, and by hand.
 #
-# Tags: `latest` and `<date>` for the default image, `full` and `full-<date>` for the full one. A
-# date tag never moves; `latest` and `full` follow the newest build.
+# Tags: `latest` and `<date>` for the default image, `full` and `full-<date>` for the full one,
+# `agent-home` and `agent-home-<date>` for the agent CLIs. A date tag never moves; the others follow
+# the newest build.
 name: build
 
 on:
   push:
     branches: [main]
-    paths-ignore: ['REFERENCE.md', 'REFERENCE-full.md']
+    paths-ignore: ['REFERENCE.md', 'REFERENCE-full.md', 'REFERENCE-agent-home.md']
   schedule:
     - cron: '0 5 * * 1'
   workflow_dispatch:
@@ -70,26 +71,69 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Each CLI's current stable release, resolved once here (with the job's token: unauthenticated
+      # GitHub API calls are rate-limited) and passed in, so the image has exactly these.
+      - name: Resolve the agent CLI versions
+        id: cli
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          {
+            echo "claude=$(curl -fsSL https://downloads.claude.ai/claude-code-releases/stable)"
+            echo "codex=$(gh api repos/openai/codex/releases/latest --jq .tag_name | sed 's/^rust-v//')"
+            echo "copilot=$(gh api repos/github/copilot-cli/releases/latest --jq .tag_name | sed 's/^v//')"
+            echo "cursor=$(curl -fsSL https://cursor.com/install | grep -oE 'lab/[0-9.]+-[0-9a-f]+' | head -n 1 | cut -d/ -f2)"
+            echo "grok=$(curl -fsSL https://x.ai/cli/stable)"
+            echo "vibe=$(curl -fsSL https://pypi.org/pypi/mistral-vibe/json | jq -r .info.version)"
+            echo "ttyd=$(gh api repos/tsl0922/ttyd/releases/latest --jq .tag_name)"
+          } | tee -a "$GITHUB_OUTPUT"
+
+      - name: Build and push the agent-home image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.agent-home
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          build-args: |
+            BASE=${{ env.IMAGE }}:${{ steps.date.outputs.tag }}
+            CLAUDE_VERSION=${{ steps.cli.outputs.claude }}
+            CODEX_VERSION=${{ steps.cli.outputs.codex }}
+            COPILOT_VERSION=${{ steps.cli.outputs.copilot }}
+            CURSOR_VERSION=${{ steps.cli.outputs.cursor }}
+            GROK_VERSION=${{ steps.cli.outputs.grok }}
+            VIBE_VERSION=${{ steps.cli.outputs.vibe }}
+            TTYD_VERSION=${{ steps.cli.outputs.ttyd }}
+          tags: |
+            ${{ env.IMAGE }}:agent-home
+            ${{ env.IMAGE }}:agent-home-${{ steps.date.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       - name: Write the reference from the images
         run: |
           set -eu
           size() { docker manifest inspect "$1" | jq '[.layers[].size] | add / 1048576 | round'; }
-          for t in "${{ steps.date.outputs.tag }}" "full-${{ steps.date.outputs.tag }}"; do
-            case "$t" in full-*) out=REFERENCE-full.md ;; *) out=REFERENCE.md ;; esac
+          for t in "${{ steps.date.outputs.tag }}" "full-${{ steps.date.outputs.tag }}" "agent-home-${{ steps.date.outputs.tag }}"; do
+            case "$t" in
+              full-*) out=REFERENCE-full.md file=Dockerfile.full ;;
+              agent-home-*) out=REFERENCE-agent-home.md file=Dockerfile.agent-home ;;
+              *) out=REFERENCE.md file=Dockerfile ;;
+            esac
             docker run --rm "$IMAGE:$t" sandbox-versions > "$out"
             printf '\n## Image\n\n`%s:%s`, %s MB compressed. The Dockerfile: [%s](%s).\n' \
-              "$IMAGE" "$t" "$(size "$IMAGE:$t")" \
-              "$( [ "$out" = REFERENCE.md ] && echo Dockerfile || echo Dockerfile.full )" \
-              "$( [ "$out" = REFERENCE.md ] && echo Dockerfile || echo Dockerfile.full )" >> "$out"
+              "$IMAGE" "$t" "$(size "$IMAGE:$t")" "$file" "$file" >> "$out"
           done
-          cat REFERENCE.md REFERENCE-full.md >> "$GITHUB_STEP_SUMMARY"
+          cat REFERENCE.md REFERENCE-full.md REFERENCE-agent-home.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Commit the reference
         run: |
           set -eu
           git config user.name 'briq build'
           git config user.email 'hello@briq.cloud'
-          git add REFERENCE.md REFERENCE-full.md
+          git add REFERENCE.md REFERENCE-full.md REFERENCE-agent-home.md
           git diff --cached --quiet && exit 0
           git commit -m "Reference: ${{ steps.date.outputs.tag }}"
           git push
