@@ -18,12 +18,17 @@ echo "## Languages"
 echo
 echo "| Language | Version | Package managers |"
 echo "| --- | --- | --- |"
-row Python "$(ver python --version) (\`python\`, \`python3\`), $(ver python3.12 --version) (\`python3.12\`)" \
-  "pip $(ver pip --version), uv $(ver uv --version), poetry $(ver poetry --version)"
-row Node.js "$(ver node --version)" \
-  "npm $(ver npm --version), pnpm $(ver pnpm --version), yarn $(ver yarn --version), bun $(ver bun --version)"
+if has uv; then
+  row Python "$(ver python --version) (\`python\`, \`python3\`), $(ver python3.12 --version) (\`python3.12\`)" \
+    "pip $(ver pip --version), uv $(ver uv --version), poetry $(ver poetry --version)"
+else
+  row Python "$(ver python3 --version) (\`python\`, \`python3\`)" "pip $(ver pip3 --version)"
+fi
+has node && row Node.js "$(ver node --version)" \
+    "npm $(ver npm --version), pnpm $(ver pnpm --version), yarn $(ver yarn --version), bun $(ver bun --version)"
 row "C/C++" "gcc $(ver gcc -dumpfullversion)" \
   "make $(ver make --version), cmake $(ver cmake --version), ninja $(ver ninja --version), pkg-config $(ver pkg-config --version)"
+has rustc && row Rust "$(ver rustc --version)" "cargo $(ver cargo --version), rustup $(ver rustup --version), targets: $(rustup target list --installed | tr '\n' ' ')"
 echo
 if python -c 'import pandas' 2>/dev/null; then
   echo "Python libraries for \`python\`: $(python -c '
@@ -81,4 +86,19 @@ if [ -x /usr/local/bin/desktop-start ]; then
   echo "## Desktop"
   echo
   echo "A screen of ${size} (Xvfb $(pkg xvfb)), Openbox $(pkg openbox), and Chromium on it as the \`desktop\` user, its profile on the volume. The view: x11vnc $(pkg x11vnc) and noVNC ${novnc}, on \`\$PORT\`. For agents: Playwright MCP $(ver playwright-mcp --version) on that Chromium, and the desktop's MCP server (screenshot, zoom, click, type, key, scroll, drag) on port 8931, both behind \`DESKTOP_TOKEN\`. Input through xdotool $(pkg xdotool)."
+fi
+if [ -x /usr/local/bin/kvm-ready ]; then
+  echo
+  echo "## Virtualization"
+  echo
+  echo "Run \`kvm-ready\` once the briq is up (the kvm-sandbox recipe does at each boot): udev, the ZFS module, the cgroup controllers."
+  echo
+  echo "| Tool | Version | What for |"
+  echo "| --- | --- | --- |"
+  tool firecracker --version "Firecracker microVMs (\`jailer\` too)"
+  has zfs && row "\`zfs\`" "$(dpkg-query -W -f='${Version}' zfsutils-linux | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+')" "ZFS tools; the module comes with the host's kvm kernel"
+  tool nft --version "nftables"
+  tool conntrack --version "Connection tracking"
+  tool qemu-img --version "Disk images"
+  tool sgdisk --version "Partitions"
 fi
