@@ -1,0 +1,56 @@
+# The briq sandbox, `kvm`: a machine with /dev/kvm, for code that runs virtual machines (Firecracker,
+# QEMU, a microVM runtime's own test suites). Pick it with the `kvm-sandbox` recipe, which asks
+# briq for a briq with `kvm: true`; on another briq the image runs, but `kvm-ready` says there is
+# no /dev/kvm.
+#
+# Ubuntu 26.04, so that the ZFS tools are the version of the `zfs.ko` the host's kvm kernel
+# brings (OpenZFS 2.4.1). A C toolchain, Python 3, Rust (stable, with the musl target), and what
+# a virtualization host uses: ZFS, nftables, conntrack, iproute2, udev, e2fsprogs, gdisk.
+# Firecracker and its jailer, the release a briqyard host pins, are in /usr/local/bin.
+# `kvm-ready` runs at each boot: udev for the device links, the ZFS module, the cgroup controllers.
+FROM ubuntu:26.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8 TZ=UTC
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl wget gnupg openssh-client sudo \
+    git git-lfs \
+    jq tmux vim nano less tree file bc openssl \
+    tar zip unzip xz-utils bzip2 gzip zstd \
+    build-essential make cmake ninja-build pkg-config musl-tools \
+    libssl-dev libffi-dev zlib1g-dev \
+    ripgrep fd-find patch diffutils \
+    procps psmisc lsof iproute2 iputils-ping bind9-dnsutils netcat-openbsd \
+    python3 python3-pip python3-venv python3-yaml \
+    zfsutils-linux nftables conntrack udev kmod e2fsprogs gdisk util-linux \
+    qemu-utils socat \
+  && ln -s /usr/bin/fdfind /usr/local/bin/fd \
+  && ln -sf /usr/bin/python3 /usr/local/bin/python \
+  && rm -rf /var/lib/apt/lists/*
+
+# Rust, stable, for every user: rustup and cargo under /usr/local, the musl target for static
+# binaries.
+ENV RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/usr/local/cargo PATH=/usr/local/cargo/bin:$PATH
+RUN curl -fsSL https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal \
+    --component clippy,rustfmt --target "$(uname -m)-unknown-linux-musl" \
+  && chmod -R a+w "$RUSTUP_HOME" "$CARGO_HOME"
+
+# Firecracker and its jailer, v1.17.0, checked against the digests a briqyard host pins.
+RUN case "$(uname -m)" in \
+      x86_64) SUM=06094a1108ae9e82aa4c23a775aa92758f53f1175d422270d9d6162cb9ade558 ;; \
+      aarch64) SUM=e351ebe4f7a16b5873bbd51005d2e6767103cff4d5ebc829df2d3f95a93e2256 ;; \
+      *) echo "no Firecracker build for $(uname -m)" >&2; exit 1 ;; \
+    esac \
+  && curl -fsSL "https://github.com/firecracker-microvm/firecracker/releases/download/v1.17.0/firecracker-v1.17.0-$(uname -m).tgz" -o /tmp/fc.tgz \
+  && echo "$SUM  /tmp/fc.tgz" | sha256sum -c - \
+  && tar -xzf /tmp/fc.tgz -C /tmp \
+  && install -m 0755 "/tmp/release-v1.17.0-$(uname -m)/firecracker-v1.17.0-$(uname -m)" /usr/local/bin/firecracker \
+  && install -m 0755 "/tmp/release-v1.17.0-$(uname -m)/jailer-v1.17.0-$(uname -m)" /usr/local/bin/jailer \
+  && rm -rf /tmp/fc.tgz /tmp/release-v1.17.0-*
+
+COPY bin/sandbox-versions bin/kvm-ready /usr/local/bin/
+RUN chmod +x /usr/local/bin/sandbox-versions /usr/local/bin/kvm-ready && sandbox-versions > /dev/null
+
+WORKDIR /work
+CMD ["sleep", "infinity"]
