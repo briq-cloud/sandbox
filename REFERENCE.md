@@ -1,12 +1,12 @@
 # What is in the sandbox
 
-`x86_64`, Ubuntu 24.04.5 LTS, built 2026-11-02. Printed by `sandbox-versions` inside the image.
+`x86_64`, Ubuntu 24.04.5 LTS, built 2026-11-03. Printed by `sandbox-versions` inside the image.
 
 ## Languages
 
 | Language | Version | Package managers |
 | --- | --- | --- |
-| Python | 3.13.18 (`python`, `python3`), 3.12.16 (`python3.12`) | pip 26.2.2, uv 0.13.6, poetry 2.5.1 |
+| Python | 3.13.18 (`python`, `python3`), 3.12.16 (`python3.12`) | pip 26.3, uv 0.13.7, poetry 2.5.1 |
 | Node.js | 24.22.2 | npm 11.19.1, pnpm 12.16.1, yarn 1.22.22, bun 1.4.4 |
 | C/C++ | gcc 13.3.0 | make 4.3, cmake 3.28.3, ninja 1.11.1, pkg-config 1.8.1 |
 
@@ -41,4 +41,4 @@ The servers run as briqs next to the sandbox (the `postgres` and `redis` recipes
 
 ## Image
 
-`ghcr.io/briq-cloud/sandbox:2026-11-02`, 491 MB compressed. The Dockerfile: [Dockerfile](Dockerfile).
+`ghcr.io/briq-cloud/sandbox:2026-11-03`, 492 MB compressed. The Dockerfile: [Dockerfile](Dockerfile).
