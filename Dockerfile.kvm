@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential make cmake ninja-build pkg-config musl-tools \
     libssl-dev libffi-dev zlib1g-dev \
     ripgrep fd-find patch diffutils \
-    procps psmisc lsof iproute2 iputils-ping dnsutils netcat-openbsd \
+    procps psmisc lsof iproute2 iputils-ping bind9-dnsutils netcat-openbsd \
     python3 python3-pip python3-venv python3-yaml \
     zfsutils-linux nftables conntrack udev kmod e2fsprogs gdisk util-linux \
     qemu-utils socat \

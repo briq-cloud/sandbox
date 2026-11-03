@@ -2,27 +2,35 @@
 # Makes a kvm sandbox ready for a hypervisor, at each boot (the kvm-sandbox recipe runs it before
 # its steps). The guest's own init starts no udev and loads no module, so:
 # - udev, for the /dev/zvol/* and /dev/disk/* links ZFS and disk tools look for;
-# - the ZFS module, from the modules the host's kvm kernel brings at /lib/modules/<release>;
+# - the ZFS module, from the modules the host's kvm kernel brings at /lib/modules/<release>,
+#   checked against the ZFS tools' version;
 # - every cgroup v2 controller delegated to the children (a jailer puts each VM in its own).
-# Safe to run again.
+# Safe to run again. Exits non-zero, saying why, when the sandbox cannot run a hypervisor.
 set -eu
 
-[ -e /dev/kvm ] || { echo "kvm-ready: no /dev/kvm: this briq was not made with kvm: true" >&2; exit 1; }
+fail() { echo "kvm-ready: $*" >&2; exit 1; }
 
-if ! pgrep -x systemd-udevd > /dev/null; then /usr/lib/systemd/systemd-udevd --daemon; fi
-udevadm trigger --action=add
-udevadm settle --timeout=30
+[ -e /dev/kvm ] || fail "no /dev/kvm: this briq was not made with kvm: true"
+[ -r /dev/kvm ] && [ -w /dev/kvm ] || fail "/dev/kvm is not readable and writable by $(id -un)"
+
+if ! pgrep -x systemd-udevd > /dev/null; then
+  /usr/lib/systemd/systemd-udevd --daemon || fail "udev did not start"
+fi
+udevadm trigger --action=add || fail "udevadm trigger failed"
+udevadm settle --timeout=30 || fail "udev did not settle within 30 s"
 
 release=$(uname -r)
-if [ -d "/lib/modules/$release" ]; then
-  modprobe zfs
-else
-  echo "kvm-ready: no modules for kernel $release: ZFS is not available" >&2
-fi
+[ -d "/lib/modules/$release" ] || fail "no modules for kernel $release: the host gave this briq no kvm kernel modules"
+modprobe zfs || fail "the ZFS module did not load (modprobe zfs)"
+module=$(cat /sys/module/zfs/version)
+tools=$(dpkg-query -W -f='${Version}' zfsutils-linux)
+[ "${module%%-*}" = "${tools%%-*}" ] ||
+  fail "ZFS tools $tools do not match the host's module $module"
 
 for c in $(cat /sys/fs/cgroup/cgroup.controllers); do
-  grep -qw "$c" /sys/fs/cgroup/cgroup.subtree_control || echo "+$c" > /sys/fs/cgroup/cgroup.subtree_control
+  grep -qw "$c" /sys/fs/cgroup/cgroup.subtree_control && continue
+  echo "+$c" 2> /dev/null > /sys/fs/cgroup/cgroup.subtree_control ||
+    fail "cannot delegate the cgroup controller $c (/sys/fs/cgroup/cgroup.subtree_control)"
 done
 
-zfs=$(cat /sys/module/zfs/version 2>/dev/null || echo none)
-echo "kvm-ready: /dev/kvm, kernel $release, zfs module $zfs, cgroup controllers: $(cat /sys/fs/cgroup/cgroup.subtree_control)"
+echo "kvm-ready: /dev/kvm, kernel $release, zfs $module, cgroup controllers: $(cat /sys/fs/cgroup/cgroup.subtree_control)"

@@ -25,7 +25,7 @@ a sandbox, `sandbox-versions` prints the same.
 | `kvm`, `kvm-<date>` | Ubuntu 26.04 for code that runs virtual machines: a C toolchain, Python 3, Rust with the musl target, Firecracker and its jailer, ZFS tools, nftables, conntrack, udev, and `kvm-ready`, which prepares them at boot ([Dockerfile.kvm](Dockerfile.kvm), [REFERENCE-kvm.md](REFERENCE-kvm.md)). What the [kvm-sandbox](https://briq.cloud/cookbook/kvm-sandbox) recipe runs, on a briq with `/dev/kvm` | about a gigabyte |
 
 The images are built every Monday and on every change here, for `linux/amd64`. A build takes the
-latest patch of each line (Ubuntu 24.04, Python 3.13, Node 24). `latest` and `full` follow the
+latest patch of each line (Ubuntu 24.04, 26.04 for `kvm`; Python 3.13, Node 24). `latest` and `full` follow the
 newest build; a date tag (`2026-10-19`, `full-2026-10-19`) never moves. On briq, the recipe runs
 `latest`; pass `image` for another tag:
 
