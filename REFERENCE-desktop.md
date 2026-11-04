@@ -1,6 +1,6 @@
 # What is in the sandbox
 
-`x86_64`, Ubuntu 24.04.5 LTS, built 2026-11-03. Printed by `sandbox-versions` inside the image.
+`x86_64`, Ubuntu 24.04.5 LTS, built 2026-11-04. Printed by `sandbox-versions` inside the image.
 
 ## Languages
 
@@ -10,7 +10,7 @@
 | Node.js | 24.22.2 | npm 11.19.1, pnpm 12.16.1, yarn 1.22.22, bun 1.4.4 |
 | C/C++ | gcc 13.3.0 | make 4.3, cmake 3.28.3, ninja 1.11.1, pkg-config 1.8.1 |
 
-Python libraries for `python`: numpy 2.5.4, pandas 3.1.0, matplotlib 3.11.2, openpyxl 3.1.5, python-docx 1.2.0, python-pptx 1.0.2, pypdf 6.21.4, requests 2.34.2, playwright 1.64.1
+Python libraries for `python`: numpy 2.5.4, pandas 3.1.1, matplotlib 3.11.2, openpyxl 3.1.5, python-docx 1.2.0, python-pptx 1.0.2, pypdf 6.21.4, requests 2.34.2, playwright 1.64.1
 
 ## Database clients
 
@@ -58,4 +58,4 @@ A screen of 1280x800 (Xvfb 21.1.12), Openbox 3.6.1, and Chromium on it as the `d
 
 ## Image
 
-`ghcr.io/briq-cloud/sandbox:desktop-2026-11-03`, 1309 MB compressed. The Dockerfile: [Dockerfile.desktop](Dockerfile.desktop).
+`ghcr.io/briq-cloud/sandbox:desktop-2026-11-04`, 1309 MB compressed. The Dockerfile: [Dockerfile.desktop](Dockerfile.desktop).

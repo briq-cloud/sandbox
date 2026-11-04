@@ -1,6 +1,6 @@
 # What is in the sandbox
 
-`x86_64`, Ubuntu 24.04.5 LTS, built 2026-11-03. Printed by `sandbox-versions` inside the image.
+`x86_64`, Ubuntu 24.04.5 LTS, built 2026-11-04. Printed by `sandbox-versions` inside the image.
 
 ## Languages
 
@@ -41,4 +41,4 @@ The servers run as briqs next to the sandbox (the `postgres` and `redis` recipes
 
 ## Image
 
-`ghcr.io/briq-cloud/sandbox:2026-11-03`, 492 MB compressed. The Dockerfile: [Dockerfile](Dockerfile).
+`ghcr.io/briq-cloud/sandbox:2026-11-04`, 492 MB compressed. The Dockerfile: [Dockerfile](Dockerfile).
