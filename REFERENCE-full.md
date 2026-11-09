@@ -1,16 +1,16 @@
 # What is in the sandbox
 
-`x86_64`, Ubuntu 24.04.5 LTS, built 2026-11-04. Printed by `sandbox-versions` inside the image.
+`x86_64`, Ubuntu 24.04.5 LTS, built 2026-11-09. Printed by `sandbox-versions` inside the image.
 
 ## Languages
 
 | Language | Version | Package managers |
 | --- | --- | --- |
 | Python | 3.13.18 (`python`, `python3`), 3.12.16 (`python3.12`) | pip 26.3, uv 0.13.7, poetry 2.5.1 |
-| Node.js | 24.22.2 | npm 11.19.1, pnpm 12.16.1, yarn 1.22.22, bun 1.4.4 |
+| Node.js | 24.22.2 | npm 11.19.1, pnpm 12.18.0, yarn 1.22.22, bun 1.4.4 |
 | C/C++ | gcc 13.3.0 | make 4.3, cmake 3.28.3, ninja 1.11.1, pkg-config 1.8.1 |
 
-Python libraries for `python`: numpy 2.5.4, pandas 3.1.1, matplotlib 3.11.2, openpyxl 3.1.5, python-docx 1.2.0, python-pptx 1.0.2, pypdf 6.21.4, requests 2.34.2, playwright 1.64.1
+Python libraries for `python`: numpy 2.5.4, pandas 3.1.1, matplotlib 3.11.2, openpyxl 3.1.5, python-docx 1.2.0, python-pptx 1.0.2, pypdf 7.0.0, requests 2.34.2, playwright 1.64.1
 
 ## Database clients
 
@@ -31,7 +31,7 @@ The servers run as briqs next to the sandbox (the `postgres` and `redis` recipes
 | `wget` | 1.21.4 | HTTP |
 | `ssh` | 9.6 | SSH client |
 | `jq` | 1.7 | JSON |
-| `yq` | 4.54.1 | YAML |
+| `yq` | 4.54.3 | YAML |
 | `rg` | 14.1.0 | Search in files (ripgrep) |
 | `fd` | 9.0.0 | Find files |
 | `tmux` | 3.4 | Terminal multiplexer |
@@ -54,4 +54,4 @@ Playwright 1.64.1 for Node.js (`playwright`, global) and Python (`python -m play
 
 ## Image
 
-`ghcr.io/briq-cloud/sandbox:full-2026-11-04`, 1168 MB compressed. The Dockerfile: [Dockerfile.full](Dockerfile.full).
+`ghcr.io/briq-cloud/sandbox:full-2026-11-09`, 1170 MB compressed. The Dockerfile: [Dockerfile.full](Dockerfile.full).
