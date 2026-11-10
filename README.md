@@ -54,7 +54,8 @@ docker run --rm sandbox sandbox-versions
 
 ## 3D examples
 
-The `3d` image extends the default sandbox. It needs no display or GPU. CadQuery and its
+The `3d` image extends the default sandbox. It needs no display or GPU. Blender 4.5 LTS comes
+from the official Linux bundle, verified against its published SHA-256, with its matching Python and exporters. CadQuery and its
 libraries use an isolated Python 3.12 environment through `cad-python`; `python` stays unchanged.
 `freecad-python` uses a separate conda-forge FreeCAD 1.1.3 environment and its matching Python.
 

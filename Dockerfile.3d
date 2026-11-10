@@ -1,10 +1,21 @@
 # CPU-only CAD, mesh conversion and rendering, on the default development image.
 ARG BASE=ghcr.io/briq-cloud/sandbox:latest
+# Keep Blender, its Python and exporters together. Verify the official LTS archive.
+FROM ${BASE} AS blender-distribution
+RUN curl -fsSL https://download.blender.org/release/Blender4.5/blender-4.5.16-linux-x64.tar.xz \
+    -o /tmp/blender.tar.xz \
+  && echo '23432b064977908beb1ab4b7f32f024e7331105c875c187dce002aff84b10c11  /tmp/blender.tar.xz' | sha256sum -c - \
+  && mkdir -p /opt/blender \
+  && tar -xJf /tmp/blender.tar.xz -C /opt/blender --strip-components=1
+
 FROM ${BASE}
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    blender openscad ffmpeg libgl1 libglu1-mesa \
+    openscad ffmpeg libgl1 libglu1-mesa libegl1 libgomp1 \
+    libx11-6 libxxf86vm1 libxi6 libxfixes3 libxrender1 libxkbcommon0 libsm6 libice6 \
   && rm -rf /var/lib/apt/lists/*
+COPY --from=blender-distribution /opt/blender /opt/blender
+RUN ln -s /opt/blender/blender /usr/local/bin/blender
 # CadQuery's wheels support Python 3.12. Keep its dependencies apart from default Python.
 RUN uv venv --python python3.12 /opt/cad \
   && uv pip install --python /opt/cad/bin/python --no-cache \
