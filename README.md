@@ -22,6 +22,7 @@ a sandbox, `sandbox-versions` prints the same.
 | `latest`, `<date>` | The default: languages, tools, database clients ([Dockerfile](Dockerfile)) | under a gigabyte |
 | `full`, `full-<date>` | The default plus pandoc, poppler, qpdf, ffmpeg, ImageMagick, tesseract, Graphviz, the Python data libraries (NumPy, pandas, Matplotlib, openpyxl, python-docx, python-pptx, pypdf) and Playwright with Chromium ([Dockerfile.full](Dockerfile.full), [REFERENCE-full.md](REFERENCE-full.md)) | a few gigabytes |
 | `desktop`, `desktop-<date>` | `full` plus a screen: Xvfb, Openbox and Chromium, a view in the browser (noVNC), and two MCP servers for agents: Playwright MCP on that Chromium and the screen in pixels ([Dockerfile.desktop](Dockerfile.desktop), [REFERENCE-desktop.md](REFERENCE-desktop.md)). What the [desktop](https://briq.cloud/cookbook/desktop) recipe runs | a few gigabytes |
+| `3d`, `3d-<date>` | The default plus Blender (CPU Cycles), CadQuery, FreeCAD, OpenSCAD, trimesh, ezdxf, Pillow, NumPy and ffmpeg. Headless CAD and rendering ([Dockerfile.3d](Dockerfile.3d)) | a few gigabytes |
 | `kvm`, `kvm-<date>` | Ubuntu 26.04 for code that runs virtual machines: a C toolchain, Python 3, Rust with the musl target, Firecracker and its jailer, ZFS tools, nftables, conntrack, udev, and `kvm-ready`, which prepares them at boot ([Dockerfile.kvm](Dockerfile.kvm), [REFERENCE-kvm.md](REFERENCE-kvm.md)). What the [kvm-sandbox](https://briq.cloud/cookbook/kvm-sandbox) recipe runs, on a briq with `/dev/kvm` | about a gigabyte |
 
 The images are built every Monday and on every change here, for `linux/amd64`. A build takes the
@@ -45,9 +46,32 @@ docker run --rm -it ghcr.io/briq-cloud/sandbox:latest bash
 docker build -t sandbox .
 docker build -t sandbox:full --build-arg BASE=sandbox -f Dockerfile.full .
 docker build -t sandbox:desktop --build-arg BASE=sandbox:full -f Dockerfile.desktop .
+docker build -t sandbox:3d --build-arg BASE=sandbox -f Dockerfile.3d .
+docker run --rm sandbox:3d /opt/3d/smoke.sh
 docker build -t sandbox:kvm -f Dockerfile.kvm .
 docker run --rm sandbox sandbox-versions
 ```
+
+## 3D examples
+
+The `3d` image extends the default sandbox. It needs no display or GPU. Blender 4.5 LTS comes
+from the official Linux bundle, verified against its published SHA-256, with its matching Python and exporters. CadQuery and its
+libraries use an isolated Python 3.12 environment through `cad-python`; `python` stays unchanged.
+`freecad-python` uses a separate conda-forge FreeCAD 1.1.3 environment and its matching Python.
+
+Run these in a writable directory; each writes its outputs there:
+
+```bash
+cad-python /opt/3d/examples/plate.py  # plate.step, plate.stl; 60 × 40 × 6 mm, 8 mm hole
+openscad -o part.stl /opt/3d/examples/part.scad
+freecad-python /opt/3d/examples/freecad.py  # freecad.step, freecad.FCStd
+blender -b --python-exit-code 1 -t 2 --python /opt/3d/examples/scene.py
+# scene.blend, scene.glb, scene.png; CPU Cycles
+```
+
+Use `--python-exit-code 1` with Blender scripts so script failures fail the command. Run FreeCAD
+scripts through `freecad-python` so exceptions also produce a nonzero exit code. The examples
+are in [examples/3d](examples/3d); `/opt/3d/smoke.sh` checks them in a temporary directory.
 
 ## Links
 

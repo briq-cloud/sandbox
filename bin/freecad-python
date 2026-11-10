@@ -1,0 +1,4 @@
+#!/bin/sh
+# Run compiled FreeCAD modules with the Python shipped in their own environment.
+export PYTHONPATH="/opt/freecad/lib${PYTHONPATH:+:$PYTHONPATH}"
+exec /opt/freecad/bin/python "$@"

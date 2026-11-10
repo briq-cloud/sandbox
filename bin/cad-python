@@ -1,0 +1,3 @@
+#!/bin/sh
+# Keep Python's executable path inside the virtual environment so pyvenv.cfg is found.
+exec /opt/cad/bin/python "$@"

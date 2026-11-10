@@ -10,7 +10,7 @@ name: build
 on:
   push:
     branches: [main]
-    paths-ignore: ['REFERENCE.md', 'REFERENCE-full.md', 'REFERENCE-desktop.md', 'REFERENCE-kvm.md']
+    paths-ignore: ['REFERENCE.md', 'REFERENCE-full.md', 'REFERENCE-desktop.md', 'REFERENCE-kvm.md', 'REFERENCE-3d.md']
   schedule:
     - cron: '0 5 * * 1'
   workflow_dispatch:
@@ -56,6 +56,33 @@ jobs:
             ${{ env.IMAGE }}:${{ steps.date.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Publish the exact local candidate only after the functional smoke passes.
+      - name: Build the 3D candidate
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.3d
+          platforms: linux/amd64
+          load: true
+          provenance: false
+          build-args: BASE=${{ env.IMAGE }}:${{ steps.date.outputs.tag }}
+          tags: sandbox:3d-candidate
+          cache-from: type=gha,scope=3d
+          cache-to: type=gha,scope=3d,mode=max
+
+      - name: Smoke and publish the 3D image
+        run: |
+          set -eu
+          docker run --rm sandbox:3d-candidate /opt/3d/smoke.sh
+          docker tag sandbox:3d-candidate "$IMAGE:3d"
+          docker push "$IMAGE:3d"
+          tag="3d-${{ steps.date.outputs.tag }}"
+          # Preserve the first successful build tagged with this date.
+          if ! docker manifest inspect "$IMAGE:$tag" > /dev/null 2>&1; then
+            docker tag sandbox:3d-candidate "$IMAGE:$tag"
+            docker push "$IMAGE:$tag"
+          fi
 
       - name: Build and push the full image
         uses: docker/build-push-action@v6
@@ -105,10 +132,11 @@ jobs:
         run: |
           set -eu
           size() { docker manifest inspect "$1" | jq '[.layers[].size] | add / 1048576 | round'; }
-          for t in "${{ steps.date.outputs.tag }}" "full-${{ steps.date.outputs.tag }}" "desktop-${{ steps.date.outputs.tag }}" "kvm-${{ steps.date.outputs.tag }}"; do
+          for t in "${{ steps.date.outputs.tag }}" "full-${{ steps.date.outputs.tag }}" "desktop-${{ steps.date.outputs.tag }}" "kvm-${{ steps.date.outputs.tag }}" "3d-${{ steps.date.outputs.tag }}"; do
             case "$t" in
               full-*) out=REFERENCE-full.md file=Dockerfile.full ;;
               desktop-*) out=REFERENCE-desktop.md file=Dockerfile.desktop ;;
+              3d-*) out=REFERENCE-3d.md file=Dockerfile.3d ;;
               kvm-*) out=REFERENCE-kvm.md file=Dockerfile.kvm ;;
               *) out=REFERENCE.md file=Dockerfile ;;
             esac
@@ -116,14 +144,14 @@ jobs:
             printf '\n## Image\n\n`%s:%s`, %s MB compressed. The Dockerfile: [%s](%s).\n' \
               "$IMAGE" "$t" "$(size "$IMAGE:$t")" "$file" "$file" >> "$out"
           done
-          cat REFERENCE.md REFERENCE-full.md REFERENCE-desktop.md REFERENCE-kvm.md >> "$GITHUB_STEP_SUMMARY"
+          cat REFERENCE.md REFERENCE-full.md REFERENCE-desktop.md REFERENCE-kvm.md REFERENCE-3d.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Commit the reference
         run: |
           set -eu
           git config user.name 'briq build'
           git config user.email 'hello@briq.cloud'
-          git add REFERENCE.md REFERENCE-full.md REFERENCE-desktop.md REFERENCE-kvm.md
+          git add REFERENCE.md REFERENCE-full.md REFERENCE-desktop.md REFERENCE-kvm.md REFERENCE-3d.md
           git diff --cached --quiet && exit 0
           git commit -m "Reference: ${{ steps.date.outputs.tag }}"
           git push

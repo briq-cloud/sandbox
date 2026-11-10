@@ -102,3 +102,20 @@ if [ -x /usr/local/bin/kvm-ready ]; then
   tool qemu-img --version "Disk images"
   tool sgdisk --version "Partitions"
 fi
+
+if has cad-python; then
+  echo
+  echo "## 3D"
+  echo
+  echo "CPU-only headless tools. Examples: \`/opt/3d/examples\`. Run FreeCAD scripts with \`freecad-python\` and its isolated Python environment at \`/opt/freecad\`."
+  echo
+  echo "| Tool | Version | What for |"
+  echo "| --- | --- | --- |"
+  tool blender --version "Modelling, GLB export, CPU Cycles rendering"
+  tool openscad --version "Scripted solid models"
+  row FreeCAD "$(freecad-python -c 'import FreeCAD; print(".".join(FreeCAD.Version()[:3]))')" "Native CAD and STEP"
+  echo
+  echo "Python libraries for \`cad-python\` (isolated Python 3.12): $(cad-python -c '
+import importlib.metadata as m
+print(", ".join(f"{n} {m.version(n)}" for n in ["cadquery", "trimesh", "ezdxf", "Pillow", "numpy"]))')"
+fi
