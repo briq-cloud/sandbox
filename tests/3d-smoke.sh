@@ -7,7 +7,15 @@ cd "$work"
 cad-python /opt/3d/examples/plate.py
 QT_QPA_PLATFORM=offscreen openscad -o part.stl /opt/3d/examples/part.scad
 freecad-python /opt/3d/examples/freecad.py
-blender -b --python-exit-code 1 -t 2 --python /opt/3d/examples/scene.py
+blender -b --factory-startup --disable-autoexec --python-exit-code 1 -t 2 --python /opt/3d/examples/scene.py
+freecad-python - <<'PYFC'
+import FreeCAD as App
+import Part
+doc = App.openDocument('freecad.FCStd')
+assert doc.getObject('Plate').Shape.isValid()
+App.closeDocument(doc.Name)
+PYFC
+blender -b scene.blend --disable-autoexec --python-exit-code 1 --python-expr 'import bpy; assert any(o.type == "MESH" for o in bpy.context.scene.objects)'
 cad-python - <<'PY'
 from pathlib import Path
 import cadquery as cq

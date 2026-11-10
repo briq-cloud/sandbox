@@ -1,8 +1,4 @@
-"""/usr/bin/python3 /opt/3d/examples/freecad.py: headless native CAD and STEP."""
-import sys
-
-# Ubuntu's FreeCAD extension is built for the distro Python, not the uv interpreter.
-sys.path.append("/usr/lib/freecad-python3/lib")
+"""freecad-python /opt/3d/examples/freecad.py: headless native CAD and STEP."""
 import FreeCAD as App
 import Part
 

@@ -56,7 +56,7 @@ docker run --rm sandbox sandbox-versions
 
 The `3d` image extends the default sandbox. It needs no display or GPU. CadQuery and its
 libraries use an isolated Python 3.12 environment through `cad-python`; `python` stays unchanged.
-`freecad-python` uses Ubuntu's `/usr/bin/python3` and packaged FreeCAD modules.
+`freecad-python` uses a separate conda-forge FreeCAD 1.1.3 environment and its matching Python.
 
 Run these in a writable directory; each writes its outputs there:
 
@@ -69,7 +69,7 @@ blender -b --python-exit-code 1 -t 2 --python /opt/3d/examples/scene.py
 ```
 
 Use `--python-exit-code 1` with Blender scripts so script failures fail the command. Run FreeCAD
-scripts through the distro Python so exceptions also produce a nonzero exit code. The examples
+scripts through `freecad-python` so exceptions also produce a nonzero exit code. The examples
 are in [examples/3d](examples/3d); `/opt/3d/smoke.sh` checks them in a temporary directory.
 
 ## Links
