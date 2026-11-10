@@ -8,6 +8,7 @@ on:
       - tests/3d-smoke.sh
       - bin/sandbox-versions
       - bin/freecad-python
+      - bin/cad-python
       - .github/workflows/3d.yml
       - .github/workflows/build.yml
   workflow_dispatch:
