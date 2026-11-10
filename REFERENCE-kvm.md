@@ -1,6 +1,6 @@
 # What is in the sandbox
 
-`x86_64`, Ubuntu 26.04.1 LTS, built 2026-11-09. Printed by `sandbox-versions` inside the image.
+`x86_64`, Ubuntu 26.04.1 LTS, built 2026-11-10. Printed by `sandbox-versions` inside the image.
 
 ## Languages
 
@@ -50,4 +50,4 @@ Run `kvm-ready` once the briq is up (the kvm-sandbox recipe does at each boot): 
 
 ## Image
 
-`ghcr.io/briq-cloud/sandbox:kvm-2026-11-09`, 565 MB compressed. The Dockerfile: [Dockerfile.kvm](Dockerfile.kvm).
+`ghcr.io/briq-cloud/sandbox:kvm-2026-11-10`, 567 MB compressed. The Dockerfile: [Dockerfile.kvm](Dockerfile.kvm).
