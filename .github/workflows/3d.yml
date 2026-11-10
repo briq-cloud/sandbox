@@ -1,0 +1,40 @@
+name: 3d
+
+on:
+  pull_request:
+    paths:
+      - Dockerfile.3d
+      - examples/3d/**
+      - tests/3d-smoke.sh
+      - bin/sandbox-versions
+      - bin/freecad-python
+      - .github/workflows/3d.yml
+      - .github/workflows/build.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: 3d-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build only the 3D candidate
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.3d
+          platforms: linux/amd64
+          load: true
+          provenance: false
+          tags: sandbox:3d-candidate
+          cache-from: type=gha,scope=3d
+          cache-to: type=gha,scope=3d,mode=max
+      - name: Validate headless geometry and CPU rendering
+        run: docker run --rm sandbox:3d-candidate /opt/3d/smoke.sh

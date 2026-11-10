@@ -1,0 +1,4 @@
+#!/bin/sh
+# Ubuntu FreeCAD is compiled for the distro Python, independently of uv Python.
+export PYTHONPATH="/usr/lib/freecad-python3/lib${PYTHONPATH:+:$PYTHONPATH}"
+exec /usr/bin/python3 "$@"
