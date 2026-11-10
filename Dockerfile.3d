@@ -13,9 +13,9 @@ RUN uv venv --python python3.12 /opt/cad \
 # FreeCAD is absent from Ubuntu 24.04's repositories. Use a stable conda-forge
 # release and its matching Python instead of mixing distro and uv extension ABIs.
 COPY --from=mambaorg/micromamba:2.3.3 /bin/micromamba /usr/local/bin/micromamba
-RUN micromamba create --yes --root-prefix /opt/mamba --prefix /opt/freecad \
+RUN MAMBA_ROOT_PREFIX=/opt/mamba micromamba create --yes --prefix /opt/freecad \
     --override-channels --channel conda-forge 'freecad=1.1.3' 'python=3.12' \
-  && micromamba clean --all --yes --root-prefix /opt/mamba
+  && MAMBA_ROOT_PREFIX=/opt/mamba micromamba clean --all --yes
 COPY bin/freecad-python /usr/local/bin/freecad-python
 COPY bin/sandbox-versions /usr/local/bin/sandbox-versions
 COPY examples/3d /opt/3d/examples
