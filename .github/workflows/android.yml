@@ -1,0 +1,39 @@
+name: android
+
+on:
+  pull_request:
+    paths:
+      - Dockerfile.android
+      - tests/android-smoke.sh
+      - .github/workflows/android.yml
+      - .github/workflows/build.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the android candidate on the kvm tag
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.android
+          platforms: linux/amd64
+          load: true
+          provenance: false
+          tags: sandbox:android-candidate
+          cache-from: type=gha,scope=android
+          cache-to: type=gha,scope=android,mode=max
+      - name: List the SDK and report the size
+        run: |
+          docker run --rm sandbox:android-candidate /opt/android-smoke.sh
+          docker image inspect sandbox:android-candidate --format 'uncompressed bytes: {{.Size}}'

@@ -1,0 +1,28 @@
+# The kvm sandbox with the Android SDK and one emulator system image (Android 14, google_apis,
+# x86_64), so that the android-emulator recipe starts without a download. The emulator needs
+# /dev/kvm to run; the image builds and lists its packages without it.
+#
+# The SDK is in /opt/android-sdk, not /work: the sandbox's volume mounts over /work. Google's
+# SDK licence is accepted when the image is built.
+ARG BASE=ghcr.io/briq-cloud/sandbox:kvm
+FROM ${BASE}
+ARG DEBIAN_FRONTEND=noninteractive
+ARG CMDLINE_TOOLS=13114758
+ARG ANDROID_SYSTEM_IMAGE="system-images;android-34;google_apis;x86_64"
+ENV ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openjdk-21-jdk-headless libgl1 libpulse0 libnss3 libxcomposite1 libxcursor1 libxi6 \
+    libxtst6 libxkbcommon0 libdbus-1-3 libasound2t64 \
+  && rm -rf /var/lib/apt/lists/*
+RUN mkdir -p "$ANDROID_HOME/cmdline-tools" /tmp/cmd \
+  && curl -fsSL -o /tmp/cmd.zip "https://dl.google.com/android/repository/commandlinetools-linux-${CMDLINE_TOOLS}_latest.zip" \
+  && unzip -q /tmp/cmd.zip -d /tmp/cmd \
+  && mv /tmp/cmd/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest" \
+  && rm -rf /tmp/cmd /tmp/cmd.zip \
+  && (yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true) \
+  && "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install platform-tools emulator "$ANDROID_SYSTEM_IMAGE" > /dev/null \
+  && for t in platform-tools/adb emulator/emulator cmdline-tools/latest/bin/sdkmanager cmdline-tools/latest/bin/avdmanager; do \
+       ln -sf "$ANDROID_HOME/$t" "/usr/local/bin/${t##*/}"; \
+     done \
+  && rm -rf /root/.android/cache /tmp/* /var/tmp/*
+COPY tests/android-smoke.sh /opt/android-smoke.sh
