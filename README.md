@@ -24,6 +24,7 @@ a sandbox, `sandbox-versions` prints the same.
 | `desktop`, `desktop-<date>` | `full` plus a screen: Xvfb, Openbox and Chromium, a view in the browser (noVNC), and two MCP servers for agents: Playwright MCP on that Chromium and the screen in pixels ([Dockerfile.desktop](Dockerfile.desktop), [REFERENCE-desktop.md](REFERENCE-desktop.md)). What the [desktop](https://briq.cloud/cookbook/desktop) recipe runs | a few gigabytes |
 | `3d`, `3d-<date>` | The default plus Blender (CPU Cycles), CadQuery, FreeCAD, OpenSCAD, trimesh, ezdxf, Pillow, NumPy and ffmpeg. Headless CAD and rendering ([Dockerfile.3d](Dockerfile.3d)) | a few gigabytes |
 | `kvm`, `kvm-<date>` | Ubuntu 26.04 for code that runs virtual machines: a C toolchain, Python 3, Rust with the musl target, Firecracker and its jailer, ZFS tools, nftables, conntrack, udev, and `kvm-ready`, which prepares them at boot ([Dockerfile.kvm](Dockerfile.kvm), [REFERENCE-kvm.md](REFERENCE-kvm.md)). What the [kvm-sandbox](https://briq.cloud/cookbook/kvm-sandbox) recipe runs, on a briq with `/dev/kvm` | about a gigabyte |
+| `android`, `android-<date>` | `kvm` plus the Android SDK in `/opt/android-sdk`: `adb`, the emulator, `sdkmanager`, `avdmanager` and the Android 14 x86_64 `google_apis` system image. Google's SDK licence is accepted at build time ([Dockerfile.android](Dockerfile.android), [REFERENCE-android.md](REFERENCE-android.md)). What the android-emulator recipe runs, on a briq with `/dev/kvm` | about 5 gigabytes |
 
 The images are built every Monday and on every change here, for `linux/amd64`. A build takes the
 latest patch of each line (Ubuntu 24.04, 26.04 for `kvm`; Python 3.13, Node 24). `latest` and `full` follow the
@@ -49,6 +50,8 @@ docker build -t sandbox:desktop --build-arg BASE=sandbox:full -f Dockerfile.desk
 docker build -t sandbox:3d --build-arg BASE=sandbox -f Dockerfile.3d .
 docker run --rm sandbox:3d /opt/3d/smoke.sh
 docker build -t sandbox:kvm -f Dockerfile.kvm .
+docker build -t sandbox:android --build-arg BASE=sandbox:kvm -f Dockerfile.android .
+docker run --rm sandbox:android /opt/android-smoke.sh
 docker run --rm sandbox sandbox-versions
 ```
 
