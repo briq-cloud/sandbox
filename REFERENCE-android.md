@@ -1,6 +1,6 @@
 # What is in the sandbox
 
-`x86_64`, Ubuntu 26.04.1 LTS, built 2026-11-12. Printed by `sandbox-versions` inside the image.
+`x86_64`, Ubuntu 26.04.1 LTS, built 2026-11-16. Printed by `sandbox-versions` inside the image.
 
 ## Languages
 
@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | Python | 3.14.4 (`python`, `python3`) | pip 25.1.1 |
 | C/C++ | gcc 15.2.0 | make 4.4.1, cmake 4.2.3, ninja 1.13.2, pkg-config 2.5.1 |
-| Rust | 1.99.1 | cargo 1.99.1, rustup 1.29.3, targets: x86_64-unknown-linux-gnu x86_64-unknown-linux-musl  |
+| Rust | 1.100.0 | cargo 1.100.0, rustup 1.29.3, targets: x86_64-unknown-linux-gnu x86_64-unknown-linux-musl  |
 
 ## Database clients
 
@@ -63,4 +63,4 @@ Installed packages:
 
 ## Image
 
-`ghcr.io/briq-cloud/sandbox:android-2026-11-12`, 2757 MB compressed. The Dockerfile: [Dockerfile.android](Dockerfile.android).
+`ghcr.io/briq-cloud/sandbox:android-2026-11-16`, 2765 MB compressed. The Dockerfile: [Dockerfile.android](Dockerfile.android).

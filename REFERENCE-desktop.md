@@ -1,16 +1,16 @@
 # What is in the sandbox
 
-`x86_64`, Ubuntu 24.04.5 LTS, built 2026-11-12. Printed by `sandbox-versions` inside the image.
+`x86_64`, Ubuntu 24.04.5 LTS, built 2026-11-16. Printed by `sandbox-versions` inside the image.
 
 ## Languages
 
 | Language | Version | Package managers |
 | --- | --- | --- |
-| Python | 3.13.18 (`python`, `python3`), 3.12.16 (`python3.12`) | pip 26.3, uv 0.13.7, poetry 2.5.1 |
-| Node.js | 24.22.3 | npm 11.19.1, pnpm 12.18.0, yarn 1.22.22, bun 1.4.4 |
+| Python | 3.13.18 (`python`, `python3`), 3.12.16 (`python3.12`) | pip 26.3, uv 0.13.8, poetry 2.5.1 |
+| Node.js | 24.22.3 | npm 11.19.1, pnpm 12.21.0, yarn 1.22.22, bun 1.4.4 |
 | C/C++ | gcc 13.3.0 | make 4.3, cmake 3.28.3, ninja 1.11.1, pkg-config 1.8.1 |
 
-Python libraries for `python`: numpy 2.5.4, pandas 3.1.1, matplotlib 3.11.2, openpyxl 3.1.5, python-docx 1.2.0, python-pptx 1.0.2, pypdf 7.0.1, requests 2.34.2, playwright 1.65.1
+Python libraries for `python`: numpy 2.5.5, pandas 3.1.1, matplotlib 3.11.2, openpyxl 3.1.5, python-docx 1.2.0, python-pptx 1.0.2, pypdf 7.1.0, requests 2.34.2, playwright 1.65.2
 
 ## Database clients
 
@@ -50,7 +50,7 @@ The servers run as briqs next to the sandbox (the `postgres` and `redis` recipes
 
 ## Browser
 
-Playwright 1.65.0 for Node.js (`playwright`, global) and Python (`python -m playwright`), with Chromium at `/opt/pw-browsers` (`PLAYWRIGHT_BROWSERS_PATH` is set). Firefox and WebKit are not installed.
+Playwright 1.65.1 for Node.js (`playwright`, global) and Python (`python -m playwright`), with Chromium at `/opt/pw-browsers` (`PLAYWRIGHT_BROWSERS_PATH` is set). Firefox and WebKit are not installed.
 
 ## Desktop
 
@@ -58,4 +58,4 @@ A screen of 1280x800 (Xvfb 21.1.12), Openbox 3.6.1, and Chromium on it as the `d
 
 ## Image
 
-`ghcr.io/briq-cloud/sandbox:desktop-2026-11-12`, 1332 MB compressed. The Dockerfile: [Dockerfile.desktop](Dockerfile.desktop).
+`ghcr.io/briq-cloud/sandbox:desktop-2026-11-16`, 1340 MB compressed. The Dockerfile: [Dockerfile.desktop](Dockerfile.desktop).
